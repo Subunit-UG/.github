@@ -9,8 +9,14 @@ on:
 jobs:
   pr-pruefung:
     if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+      pull-requests: read
     uses: Subunit-UG/.github/.github/workflows/pr-pruefung.yml@main
 
   release:
     if: github.event_name == 'push'
+    permissions:
+      contents: write
+      pull-requests: write
     uses: Subunit-UG/.github/.github/workflows/release.yml@main
