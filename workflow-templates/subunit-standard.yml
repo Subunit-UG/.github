@@ -1,0 +1,16 @@
+name: Subunit-Standard
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+  push:
+    branches: [$default-branch]
+
+jobs:
+  pr-pruefung:
+    if: github.event_name == 'pull_request'
+    uses: Subunit-UG/.github/.github/workflows/pr-pruefung.yml@main
+
+  release:
+    if: github.event_name == 'push'
+    uses: Subunit-UG/.github/.github/workflows/release.yml@main

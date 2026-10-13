@@ -1,0 +1,30 @@
+# Wiederverwendbarer Release-Lauf: liest die gemergten PR-Titel, pflegt einen
+# Release-PR mit neuer Versionsnummer und CHANGELOG.md und setzt beim Merge
+# den Tag vX.Y.Z samt GitHub-Release.
+# Aufruf im Repo:  uses: Subunit-UG/.github/.github/workflows/release.yml@main
+name: Release
+
+on:
+  workflow_call:
+    outputs:
+      release_created:
+        value: ${{ jobs.release.outputs.release_created }}
+      tag_name:
+        value: ${{ jobs.release.outputs.tag_name }}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.rp.outputs.release_created }}
+      tag_name: ${{ steps.rp.outputs.tag_name }}
+    steps:
+      - id: rp
+        uses: googleapis/release-please-action@v4
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json

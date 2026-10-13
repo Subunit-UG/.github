@@ -1,0 +1,5 @@
+{
+  "name": "Subunit-Standard",
+  "description": "PR-Prüfung (Vorlage, Zugangsdaten-Scan) und automatischer Release mit Changelog.",
+  "categories": ["Automation"]
+}

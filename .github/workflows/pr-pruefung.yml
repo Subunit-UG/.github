@@ -1,0 +1,55 @@
+# Wiederverwendbare PR-Prüfung für alle Repos der Organisation.
+# Aufruf im Repo:  uses: Subunit-UG/.github/.github/workflows/pr-pruefung.yml@main
+name: PR-Prüfung
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  vorlage:
+    name: PR-Vorlage ausgefüllt
+    runs-on: ubuntu-latest
+    steps:
+      - name: Titel und Abschnitte prüfen
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          fehler=0
+          if ! printf '%s' "$PR_TITLE" | grep -Eq '^(feat|fix|docs|chore|refactor|perf|test|build|ci|revert)(\([a-z0-9._/-]+\))?!?: .+'; then
+            echo "::error::Titel braucht das Format 'typ(bereich): Beschreibung', z. B. 'fix(login): Weiterleitung nach Anmeldung'."
+            fehler=1
+          fi
+          for abschnitt in "## Was wurde gemacht" "## Warum" "## Änderungen im Einzelnen" "## Wie geprüft" "## Risiko und Rückweg" "## Version"; do
+            if ! printf '%s' "$PR_BODY" | grep -Fq "$abschnitt"; then
+              echo "::error::Abschnitt fehlt: $abschnitt"
+              fehler=1
+            fi
+          done
+          angekreuzt=$(printf '%s' "$PR_BODY" | awk '/^## Version/{v=1;next} /^## /{v=0} v' | grep -Eci '^- \[x\]' || true)
+          if [ "$angekreuzt" != "1" ]; then
+            echo "::error::Unter 'Version' muss genau ein Kästchen angekreuzt sein (gefunden: $angekreuzt)."
+            fehler=1
+          fi
+          inhalt=$(printf '%s' "$PR_BODY" | awk '/^## Was wurde gemacht/{v=1;next} /^## /{v=0} v' | sed 's/<!--.*-->//g' | tr -d '[:space:]')
+          if [ -z "$inhalt" ]; then
+            echo "::error::'Was wurde gemacht' ist leer."
+            fehler=1
+          fi
+          exit $fehler
+
+  geheimnisse:
+    name: Keine Zugangsdaten im Code
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: gitleaks über die Commits des PR
+        run: |
+          docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:latest \
+            git /repo --redact --log-opts="origin/${{ github.base_ref }}..HEAD"
